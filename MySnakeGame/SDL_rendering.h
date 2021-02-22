@@ -16,7 +16,6 @@ namespace SDL_rendering {
 
 	//General struct holding data necessary for a window to render the game
 	struct SnakeRenderer {
-		struct FailedConstruction { std::string msg; };
 		SnakeRenderer(int x, int y, int font_size, int ppc, bool load_textures = false);
 		~SnakeRenderer();
 		FC_Font* font;

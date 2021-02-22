@@ -1,9 +1,4 @@
-﻿//My naming conventions
-//MixedCase for type names
-//lower_with_underscore for variables/consts and namespaces
-//mixedCase starting with lower for functions
-
-//
+﻿//
 // Simple snake game with extra lives by NSKuber
 // Main program, runs the game cyclically until aborted
 //
@@ -24,36 +19,52 @@ int main(int argc, char* argv[]) {
 
     std::srand(std::time(nullptr));
 
-    snake_game::SnakeGameMenu* menu;
+    snake_game::SnakeGameMenu* menu = nullptr;
     std::vector<int>* parameters = nullptr;
 
     //Handle game cycle
     while (true) {
         
-        //Menu
-        menu = new snake_game::SnakeGameMenu{ parameters };
-        
-        while ((menu->getMenuState() != MenuState::exit) && (menu->getMenuState() != MenuState::start_game)) {
-            menu->executeSimStep();
-        }
+        try {
+            //Menu
+            parameters = nullptr;
+            menu = new snake_game::SnakeGameMenu{ parameters };
 
-        if (menu->getMenuState() == MenuState::exit) {
+            while ((menu->getMenuState() != MenuState::exit) && (menu->getMenuState() != MenuState::start_game)) {
+                menu->executeSimStep();
+            }
+
+            if (menu->getMenuState() == MenuState::exit) {
+                delete menu;
+                break;
+            }
+
+            parameters = menu->fixReturnParameters();
             delete menu;
+            menu = nullptr;
+
+            //Game
+            snake_game::SnakeGame game{ parameters };
+
+            while ((game.getGameState() != GameState::exit) && (game.getGameState() != GameState::restart)) {
+                game.executeSimStep();
+            }
+
+            if (game.getGameState() == GameState::exit)
+                break;
+        }
+        catch (std::exception& e) {
+            std::cerr << e.what() << std::endl << "Press any key to exit the application\n";
+            
+            if (menu) delete menu;
+            menu = nullptr;
+            if (parameters) delete parameters;
+            parameters = nullptr;
+            
+            system("pause");
+
             break;
         }
-
-        parameters = menu->fixReturnParameters();
-        delete menu;
-
-        //Game
-        snake_game::SnakeGame game{ parameters };
-        
-        while ((game.getGameState() != GameState::exit) && (game.getGameState() != GameState::restart)) {
-            game.executeSimStep();
-        }
-
-        if (game.getGameState() == GameState::exit)
-            break;
 
     }
 

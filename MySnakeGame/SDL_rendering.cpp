@@ -43,12 +43,12 @@ SDL_Texture* SDL_rendering::loadTextureFromIMG(SDL_Renderer* ren, const char* fi
 
 SnakeRenderer::SnakeRenderer(int x, int y, int font_size, int ppc, bool load_textures) : pixels_per_cell{ ppc } {
     SDL_CreateWindowAndRenderer(x, y, NULL, &window, &renderer);
-    if (!window) throw FailedConstruction{ std::string{ SDL_GetError() } };
+    if (!window) throw std::exception{ ("Window construction error: " + std::string{SDL_GetError()}).c_str() };
     SDL_SetWindowTitle(window, "Snake by NSKuber");
 
     font = FC_CreateFont();
-    FC_LoadFont(font, renderer, "Data/Fonts/Roboto-Regular.ttf", font_size, FC_MakeColor(0, 0, 0, 255), TTF_STYLE_NORMAL);
-    if (!font) throw FailedConstruction{ std::string{ SDL_GetError() } };
+    if (!FC_LoadFont(font, renderer, "Data/Fonts/Roboto-Regular.ttf", font_size, FC_MakeColor(0, 0, 0, 255), TTF_STYLE_NORMAL))
+        throw std::exception{ ("Font construction error: " + std::string{SDL_GetError()}).c_str() };
 
     if (load_textures) {
         // Load images
@@ -61,13 +61,14 @@ SnakeRenderer::SnakeRenderer(int x, int y, int font_size, int ppc, bool load_tex
 
         // Make sure loads succeeded
         if (!textures[t_cell] || !textures[t_wall] || !textures[t_food] || !textures[t_head] || !textures[t_body] || !textures[t_dead]) {
+            std::string msg = "Texture loading error: " + std::string{ SDL_GetError() };
             SDL_DestroyTexture(textures[t_cell]);
             SDL_DestroyTexture(textures[t_wall]);
             SDL_DestroyTexture(textures[t_food]);
             SDL_DestroyTexture(textures[t_head]);
             SDL_DestroyTexture(textures[t_body]);
             SDL_DestroyTexture(textures[t_dead]);
-            throw FailedConstruction{ std::string{ SDL_GetError() } };
+            throw std::exception{ msg.c_str() };
         }
     }
 
@@ -76,11 +77,11 @@ SnakeRenderer::SnakeRenderer(int x, int y, int font_size, int ppc, bool load_tex
 SnakeRenderer::~SnakeRenderer() {
    
     for (auto a : textures)
-        SDL_DestroyTexture(a);
+        if (a) SDL_DestroyTexture(a);
     
-    FC_FreeFont(font);
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
+    if (font) FC_FreeFont(font);
+    if (renderer) SDL_DestroyRenderer(renderer);
+    if (window) SDL_DestroyWindow(window);
 }
 
 void SDL_rendering::renderSnakeGame(const SnakeRenderer& ren, const std::vector<std::vector<int>>& game_field, double head_dir, const std::string& text) {
